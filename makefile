@@ -43,10 +43,10 @@ INC_RECURSIVE_DIR :=
 INC_DIR := ./
 
 #Compiler flags
-CFLAGS := -g3
+CFLAGS := -g3 -Wno-address
 
 #Linker flags
-LDFLAGS := -g3
+LDFLAGS := -g3 -Wno-address
 
 #####################################################
 ###############			MAGIC		  ###############

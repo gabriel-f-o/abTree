@@ -10,18 +10,29 @@
 
 /*
 -----------------------------------------*/
-typedef struct abElement_s {
+/*typedef struct abElement_s {
     int32_t key;
-    void* data;
-} abElement_t;
+    //void* data;
+} abElement_t;*/
+
+typedef int32_t abElement_t;
 
 /*
 -----------------------------------------*/
-typedef struct abNode_s {
+/*typedef struct abNode_s {
     struct abNode_s** child;
     struct abNode_s* parent;
 
     abElement_t* el;
+    uint16_t keyNum;
+    bool isLeaf;
+} abNode_t;*/
+
+typedef struct abNode_s {
+    struct abNode_s* child[5];
+    struct abNode_s* parent;
+
+    abElement_t el[4];
     uint16_t keyNum;
     bool isLeaf;
 } abNode_t;

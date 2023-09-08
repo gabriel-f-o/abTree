@@ -20,7 +20,7 @@ int main(){
     abTree_insert(tree, 2, NULL);
     abTree_insert(tree, 50, NULL);    
 
-    abTree_insert(tree, 20, (void*) 69);
+    abTree_insert(tree, 20, NULL);
     
     abTree_insert(tree, 30, NULL);
     abTree_insert(tree, 40, NULL);
@@ -31,9 +31,9 @@ int main(){
     abTree_insert(tree, 4, NULL);
 
     abTree_insert(tree, 1500, NULL);
-    abTree_insert(tree, 2000, (void*) 69);
-    abTree_insert(tree, 3000, (void*) 71);
-    abTree_insert(tree, 4000, (void*) 73);
+    abTree_insert(tree, 2000, NULL);
+    abTree_insert(tree, 3000, NULL);
+    abTree_insert(tree, 4000, NULL);
 
     abTree_print(tree);
     abTree_destroy(tree);
