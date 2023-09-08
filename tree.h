@@ -29,10 +29,10 @@ typedef int32_t abElement_t;
 } abNode_t;*/
 
 typedef struct abNode_s {
-    struct abNode_s* child[5];
+    struct abNode_s* child[6];
     struct abNode_s* parent;
 
-    abElement_t el[4];
+    abElement_t el[5];
     uint16_t keyNum;
     bool isLeaf;
 } abNode_t;

@@ -8,7 +8,7 @@ void abTree_conflictCB(abNode_t* node, int32_t key, void* data){
 
 int main(){
    
-#if 01
+#if 0
     abTree_t* tree = abTree_create(2, 4, &abTree_conflictCB);
 
     abTree_insert(tree, 10, NULL);
@@ -37,25 +37,26 @@ int main(){
 
     abTree_print(tree);
     abTree_destroy(tree);
-
-#endif
-
-#if 0
-    abTree_t* tree = abTree_create(2, 4, abTree_conflictCB);
+    
+#else
+    abTree_t* tree = abTree_create(3, 5, abTree_conflictCB);
     abTree_insert(tree, 100, NULL);
     abTree_insert(tree, 200, NULL);
     abTree_insert(tree, 300, NULL);
     abTree_insert(tree, 400, NULL);
     abTree_insert(tree, 500, NULL);
     abTree_insert(tree, 600, NULL);
+    abTree_insert(tree, 700, NULL);
+    abTree_insert(tree, 800, NULL);
+    abTree_insert(tree, 201, NULL);
 
-    abTree_print(tree);
+    //abTree_print(tree);
 
     //abTree_remove(tree, 400);
-    abTree_remove(tree, 600);
+    //abTree_remove(tree, 600);
     //abTree_remove(tree, 500);
     //abTree_remove(tree, 100);
-    abTree_remove(tree, 300);
+    abTree_remove(tree, 500);
     abTree_print(tree);
 #endif
     return 0;
