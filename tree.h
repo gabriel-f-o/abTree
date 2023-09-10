@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**********************************
  * PUBLIC TYPES
  **********************************/
@@ -63,5 +67,9 @@ uint32_t abTree_getNodeHeight(abNode_t* node);
 void abTree_destroy(abTree_t* tree);
 void* abTree_remove(abTree_t* tree, int32_t key);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //__ABTREE_H__

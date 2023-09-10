@@ -201,13 +201,15 @@ abNode_t* abTree_createNodeNEl(abNode_t* parent, abElement_t new_el[], size_t el
     node->parent = parent;
     node->isLeaf = isLeaf;
 
+    memset(node->child, 0, sizeof(node->child));
+    memset(node->el, 0xFF, sizeof(node->el));
+
     memcpy(node->el, new_el, el_len * sizeof(abElement_t));
     if(!isLeaf && new_child != NULL){
         memcpy(node->child, new_child, (el_len + 1) * sizeof(abNode_t*));
     }
 
     if(isLeaf){
-        memset(node->child, 0, sizeof(node->child));
     }
 
     return node;
@@ -462,16 +464,17 @@ void* abTree_remove(abTree_t* tree, int32_t key){
 
     abTree_removeEl(node, key, NULL);
 
-    while(1){
+    while( (node->parent == NULL && node->keyNum <= 0) || (node->parent != NULL && node->keyNum < tree->a - 1)){
 
         if(node->parent == NULL){
             if(node->keyNum == 0){
                 tree->root = node->child == NULL ? NULL : node->child[0];
+                tree->root->parent = NULL;
                 abTree_freeNode(node);
             }
         }
 
-        else if(node->keyNum <= tree->a - 1){
+        else if(node->keyNum < tree->a - 1){
             int32_t i;
             for(i = 0; i < node->parent->keyNum + 1; i++){
                 if(node->parent->child[i] == node) 
@@ -482,41 +485,43 @@ void* abTree_remove(abTree_t* tree, int32_t key){
             abNode_t* neighbor_right = (i == node->parent->keyNum) ? NULL : node->parent->child[i + 1];
             
             if(neighbor_left != NULL && neighbor_left->keyNum > tree->a - 1) {
+                neighbor_left->child[neighbor_left->keyNum - 1] = node;
                 abTree_insertEl(node, node->parent->el[i - 1], NULL /*node->parent->el[i - 1]*/, neighbor_left->isLeaf ? NULL : neighbor_left->child[neighbor_left->keyNum - 1]);
                 memcpy(&node->parent->el[i - 1],    &neighbor_left->el[neighbor_left->keyNum - 1],  sizeof(abElement_t));
                 abTree_removeEl(neighbor_left,       neighbor_left->el[neighbor_left->keyNum - 1],  NULL);
             }
 
             else if(neighbor_right != NULL && neighbor_right->keyNum > tree->a - 1) {
+                neighbor_right->child[0]->parent = node;
                 abTree_insertEl(node, node->parent->el[i], NULL /*node->parent->el[i]*/, neighbor_right->isLeaf ? NULL : neighbor_right->child[0]);
                 memcpy(&node->parent->el[i],            &neighbor_right->el[0],  sizeof(abElement_t));
                 abTree_removeEl(neighbor_right,          neighbor_right->el[0],  NULL);
             }
 
             else {
-                //memcpy(&node->el[pos], &node->parent->el[i == node->parent->keyNum + 1 ? i - 1 : i], sizeof(abElement_t));
                 abNode_t* ins_node = neighbor_left != NULL ? neighbor_left : neighbor_right;
                 int32_t elPos = ins_node == neighbor_left ? i - 1 : i;
-                abElement_t el = node->parent->el[elPos];
 
-                abTree_insertEl(ins_node, el, NULL, NULL);
+                abTree_insertEl(ins_node, node->parent->el[elPos], NULL /*node->el[i].data*/, node->isLeaf ? NULL : node->child[0]);
+                for(int32_t j = 0; j < node->keyNum; j++){
+                    abTree_insertEl(ins_node, node->el[j], NULL /*node->el[j].data*/, node->isLeaf ? NULL : node->child[j + 1]);
 
-                abNode_t* remChild;
-                int32_t rem_el = abTree_removeEl(node->parent, el, &remChild);
-                abTree_removeEl(node, key, NULL);
+                    if(!node->isLeaf){
+                        if(j == 0) 
+                            node->child[j]->parent = ins_node;
+
+                        node->child[j + 1]->parent = ins_node;
+                    }
+                }
+
+                abTree_removeEl(node->parent, node->parent->el[elPos], NULL);
+                node->parent->child[elPos] = ins_node;
                 abTree_freeNode(node);
-                
-                /*int32_t elPos = i == node->parent->keyNum + 1 ? i - 1 : i;
-                abElement_t el = node->parent->el[i == node->parent->keyNum + 1 ? i - 1 : i];
-                abTree_insertEl(neighbor_left != NULL ? neighbor_left : neighbor_right, el.key, el.data, NULL, NULL);
-                abTree_removeEl(node, key, NULL, NULL);
-                abTree_removeEl(node->parent, el.key,node->parent->child[elPos - 1], node->parent->child[elPos + 1]);
-                abTree_freeNode(node);*/
+                node = ins_node->parent;
             }
-
         }
 
-        break;
+        //abTree_print(tree);
     }
 
     return NULL;
@@ -532,7 +537,8 @@ void abTree_print(abTree_t* tree){
         fprintf(stdout, "\n");
     }
 
-    fprintf(stdout, "------------------------------------------------\n\n");
+    fflush(stdout);
+    fprintf(stdout, "____________________________________________________________________________\n");
     fflush(stdout);
 
 }

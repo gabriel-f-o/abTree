@@ -40,23 +40,28 @@ int main(){
     
 #else
     abTree_t* tree = abTree_create(3, 5, abTree_conflictCB);
-    abTree_insert(tree, 100, NULL);
+    /*abTree_insert(tree, 100, NULL);
     abTree_insert(tree, 200, NULL);
     abTree_insert(tree, 300, NULL);
     abTree_insert(tree, 400, NULL);
     abTree_insert(tree, 500, NULL);
     abTree_insert(tree, 600, NULL);
     abTree_insert(tree, 700, NULL);
-    abTree_insert(tree, 800, NULL);
-    abTree_insert(tree, 201, NULL);
-
+    abTree_insert(tree, 800, NULL);*/
     //abTree_print(tree);
 
-    //abTree_remove(tree, 400);
-    //abTree_remove(tree, 600);
-    //abTree_remove(tree, 500);
-    //abTree_remove(tree, 100);
-    abTree_remove(tree, 500);
+    for(int i = 100; i <= 2000; i += 100)
+        abTree_insert(tree, i, NULL);
+
+    abTree_insert(tree, 801, NULL);
+    abTree_insert(tree, 802, NULL);
+    abTree_insert(tree, 803, NULL);
+
+    abTree_remove(tree, 1400);
+    abTree_remove(tree, 900);
+    abTree_remove(tree, 803);
+    abTree_remove(tree, 802);
+    abTree_remove(tree, 801);
     abTree_print(tree);
 #endif
     return 0;
