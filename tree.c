@@ -3,158 +3,197 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
-#include <locale.h>
 
 /**********************************************************
- * 
+ * PRIVATE FUNCTIONS
  *********************************************************/
 
-abTree_t* cur_tree;
-
-/**********************************************************
- * 
- *********************************************************/
-
-void abTree_printNode(abNode_t* node, uint32_t level){
+/* Print a node (this function uses unicode characters)
+ *
+ * @param abNode_t* node : [in] Node to print
+ * @param uint32_t level : [in] Node's level
+ * @param uint16_t b     : [in] Maximum number of childs
+----------------------------------------------------------------*/
+__static void abTree_printNode(abNode_t const * node, uint32_t level, uint16_t b)
+{
+    /* Argument check
+    ----------------------------------------------------------------*/
     if(node == NULL) return;
 
-    const int line_len = cur_tree->b * 7 + 1;
+    /* Calculate line length based on maximum number of keys
+    ----------------------------------------------------------------*/
+    const int line_len = b * 7 + 1;
 
+    /* Print first line (upper frame line)
+    ----------------------------------------------------------------*/
     for(int i = 0; i < line_len; i++) {
-             if(i == 0)                 fprintf(stdout, "\U0000250F");
-        else if(i == 7)                 fprintf(stdout, "\U0000252F");
-        else if(i == line_len - 1)      fprintf(stdout, "\U00002513\n");
-        else                            fprintf(stdout, "\U00002501");
+             if(i == 0)                 __fprintf(stdout, "\U0000250F");
+        else if(i == 7)                 __fprintf(stdout, "\U0000252F");
+        else if(i == line_len - 1)      __fprintf(stdout, "\U00002513\n");
+        else                            __fprintf(stdout, "\U00002501");
     }
 
+    /* Print second line (level + Leaf/Node)
+    ----------------------------------------------------------------*/
     int pos = -1;
     for(int i = 0; i < line_len; i++) {
-             if(i == 0)                 { fprintf(stdout, "\U00002503 L%03d ", level); i += 6; }
-        else if(i == 7)                   fprintf(stdout, "\U00002502");
-        else if(i == line_len - 1)        fprintf(stdout, "\U00002503\n");
+             if(i == 0)                 { __fprintf(stdout, "\U00002503 L%03d ", level); i += 6; }
+        else if(i == 7)                   __fprintf(stdout, "\U00002502");
+        else if(i == line_len - 1)        __fprintf(stdout, "\U00002503\n");
         else  { 
             if(pos == -1) pos = i;
             
             if(i < (line_len + pos) / 2 - 2)
-                fprintf(stdout, " ");
+                __fprintf(stdout, " ");
             
             else if(i == (line_len + pos) / 2 - 2){
-                fprintf(stdout, "%s", node->isLeaf ? "Leaf" : "Node");
+                __fprintf(stdout, "%s", node->isLeaf ? "Leaf" : "Node");
                 i += 3;
             }
 
             else{
-                fprintf(stdout, " ");
+                __fprintf(stdout, " ");
             }
         }
     }
 
+    /* Print 3rd line (Line)
+    ----------------------------------------------------------------*/
     for(int i = 0; i < line_len; i++) {
-        if(i == 0)                      fprintf(stdout, "\U00002520");
-        else if(i == line_len - 1)      fprintf(stdout, "\U00002528\n");
-        else if(i == 7)                 fprintf(stdout, "\U00002534");
-        else                            fprintf(stdout, "\U00002500");
+        if(i == 0)                      __fprintf(stdout, "\U00002520");
+        else if(i == line_len - 1)      __fprintf(stdout, "\U00002528\n");
+        else if(i == 7)                 __fprintf(stdout, "\U00002534");
+        else                            __fprintf(stdout, "\U00002500");
     }
 
+    /* Print 4th line (First parent key (or NULL))
+    ----------------------------------------------------------------*/
     for(int i = 0; i < line_len; i++) {
-             if(i == 0)                   fprintf(stdout, "\U00002503");
-        else if(i == line_len - 1)        fprintf(stdout, "\U00002503\n");
+             if(i == 0)                   __fprintf(stdout, "\U00002503");
+        else if(i == line_len - 1)        __fprintf(stdout, "\U00002503\n");
         else  {             
             if(i < (line_len) / 2 - 2)
-                fprintf(stdout, " ");
+                __fprintf(stdout, " ");
             
             else if(i == (line_len) / 2 - 2){
                 if(node->parent == NULL) 
-                    fprintf(stdout, "NULL");
+                    __fprintf(stdout, "NULL");
                 else
-                    fprintf(stdout, "%04d", node->parent->el[0]);
+                    __fprintf(stdout, "%04d", node->parent->el[0].key);
                 i += 3;
             }
 
             else{
-                fprintf(stdout, " ");
+                __fprintf(stdout, " ");
             }
         }
-    }
-
+    }    
+    
+    /* Print 5th line (line)
+    ----------------------------------------------------------------*/
     for(int i = 0; i < line_len; i++) {
-        if(i == 0)                      fprintf(stdout, "\U00002520");
-        else if(i == line_len - 1)      fprintf(stdout, "\U00002528\n");
-        else if(i == 7)                 fprintf(stdout, "\U0000252C");
-        else if(i > 7 && i % 7 == 0)    fprintf(stdout, "\U0000252C");
-        else                            fprintf(stdout, "\U00002500");
+        if(i == 0)                      __fprintf(stdout, "\U00002520");
+        else if(i == line_len - 1)      __fprintf(stdout, "\U00002528\n");
+        else if(i == 7)                 __fprintf(stdout, "\U0000252C");
+        else if(i > 7 && i % 7 == 0)    __fprintf(stdout, "\U0000252C");
+        else                            __fprintf(stdout, "\U00002500");
     }
 
+    /* Print 6th line (all keys in order)
+    ----------------------------------------------------------------*/
     printf ("\U00002503");
-    for(uint16_t i = 0; i < cur_tree->b - 1; i++){
+    for(uint16_t i = 0; i < b - 1; i++){
         if(node->el == NULL){
             for(int i = 1; i < line_len; i++) {
-                if(i == line_len - 1)           fprintf(stdout, "\U00002503\n");
-                else if(i < line_len / 2 - 2)   fprintf(stdout, " ");
-                else if(i == line_len / 2 - 2)  { fprintf(stdout, "NULL"); i += 3; }
-                else                            fprintf(stdout, " ");
+                if(i == line_len - 1)           __fprintf(stdout, "\U00002503\n");
+                else if(i < line_len / 2 - 2)   __fprintf(stdout, " ");
+                else if(i == line_len / 2 - 2)  { __fprintf(stdout, "NULL"); i += 3; }
+                else                            __fprintf(stdout, " ");
             }
 
             break;
         } 
 
         if(i < node->keyNum)
-            fprintf(stdout, " %04d \U00002502", node->el[i]);
+            __fprintf(stdout, " %04d \U00002502", node->el[i].key);
         else
-            fprintf(stdout, " XXXX \U00002502");
+            __fprintf(stdout, " XXXX \U00002502");
     }
 
+    /* Pad 6th line with "----" because the tree always have 1 child less than children
+    ----------------------------------------------------------------*/
     if(node->el != NULL)
-        fprintf(stdout, " ---- \U00002503\n");
+        __fprintf(stdout, " ---- \U00002503\n");
 
+    /* Print 7th line (line)
+    ----------------------------------------------------------------*/
     for(int i = 0; i < line_len; i++) {
-        if(i == 0)                      fprintf(stdout, "\U00002520");
-        else if(i == line_len - 1)      fprintf(stdout, "\U00002528\n");
-        else if(i % 7 == 0)             fprintf(stdout, "\U0000253C");
-        else                            fprintf(stdout, "\U00002500");
+        if(i == 0)                      __fprintf(stdout, "\U00002520");
+        else if(i == line_len - 1)      __fprintf(stdout, "\U00002528\n");
+        else if(i % 7 == 0)             __fprintf(stdout, "\U0000253C");
+        else                            __fprintf(stdout, "\U00002500");
     }
 
+    /* Print 8th line (first key for every child (or NULL if leaf))
+    ----------------------------------------------------------------*/
     printf ("\U00002503");
-    for(uint16_t i = 0; i < cur_tree->b; i++){
+    for(uint16_t i = 0; i < b; i++){
         if(node->isLeaf){
             for(int i = 1; i < line_len; i++) {
-                if(i == line_len - 1)           fprintf(stdout, "\U00002503\n");
-                else if(i < line_len / 2 - 2)   fprintf(stdout, " ");
-                else if(i == line_len / 2 - 2)  { fprintf(stdout, "NULL"); i += 3; }
-                else                            fprintf(stdout, " ");
+                if(i == line_len - 1)           __fprintf(stdout, "\U00002503\n");
+                else if(i < line_len / 2 - 2)   __fprintf(stdout, " ");
+                else if(i == line_len / 2 - 2)  { __fprintf(stdout, "NULL"); i += 3; }
+                else                            __fprintf(stdout, " ");
             }
 
             break;
         } 
 
-        if(i < node->keyNum + 1 && i < cur_tree->b)
+        if(i < node->keyNum + 1 && i < b)
             if(node->child[i] == NULL)
-                fprintf(stdout, " NULL \U00002502");
-            else if(i == cur_tree->b - 1)
-                fprintf(stdout, " %04d \U00002503\n", node->child[i]->el[0]);
+                __fprintf(stdout, " NULL \U00002502");
+            else if(i == b - 1)
+                __fprintf(stdout, " %04d \U00002503\n", node->child[i]->el[0].key);
             else
-                fprintf(stdout, " %04d \U00002502", node->child[i]->el[0]);
+                __fprintf(stdout, " %04d \U00002502", node->child[i]->el[0].key);
         
-        else if(i < cur_tree->b - 1)
-            fprintf(stdout, " XXXX \U00002502");
+        else if(i < b - 1)
+            __fprintf(stdout, " XXXX \U00002502");
         
         else
-            fprintf(stdout, " XXXX \U00002503\n");
+            __fprintf(stdout, " XXXX \U00002503\n");
     }
 
+    /* Print 9th line (lower frame)
+    ----------------------------------------------------------------*/
     for(int i = 0; i < line_len; i++) {
-        if(i == line_len - 1)           fprintf(stdout, "\U0000251B\n");
-        else if(i == 0)                 fprintf(stdout, "\U00002517");
-        else if(i % 7 == 0)             fprintf(stdout, "\U00002537");
-        else                            fprintf(stdout, "\U00002501");
+        if(i == line_len - 1)           __fprintf(stdout, "\U0000251B\n");
+        else if(i == 0)                 __fprintf(stdout, "\U00002517");
+        else if(i % 7 == 0)             __fprintf(stdout, "\U00002537");
+        else                            __fprintf(stdout, "\U00002501");
     }
 }
 
-uint32_t abTree_getNodeHeight(abNode_t* node){
+/* Print a node (this function uses unicode characters)
+ *
+ * @param abNode_t* node : [in] Node to calculate the height
+ * 
+ * @return uint32_t : node height (1 for leaf, then +1 for each level)
+----------------------------------------------------------------*/
+__static uint32_t abTree_getNodeHeight(abNode_t const * node)
+{
+    /* Arg check
+    ----------------------------------------------------------------*/
     if(node == NULL)
         return 0;
+    
+    /* If node is a leafm then hight is 1
+    ----------------------------------------------------------------*/
     else if(node->isLeaf)
         return 1;
+
+    /* Otherwise calculate node's height
+    ----------------------------------------------------------------*/
     else {
         uint32_t height = 0;
         for(uint16_t i = 0; i < node->keyNum + 1; i++){
@@ -167,98 +206,121 @@ uint32_t abTree_getNodeHeight(abNode_t* node){
     }
 }
 
-void abTree_printLevel(abNode_t* node, uint32_t level){
-    if(node == NULL)
-        return;
+/* Print a whole level (this function uses unicode characters)
+ *
+ * @param abNode_t* node : [in] Node to print
+ * @param uint32_t level : [in] Node's level
+ * @param uint16_t b     : [in] Maximum number of childs
+----------------------------------------------------------------*/
+__static void abTree_printLevel(abNode_t const * node, uint32_t level, uint16_t b)
+{
+    /* Print node if we are in the correct level
+    ----------------------------------------------------------------*/
     if(level == 1){ 
-        abTree_printNode(node, abTree_getNodeHeight(node));
+        abTree_printNode(node, abTree_getNodeHeight(node), b);
     }
+
+    /* Otherwise continue to lower levels
+    ----------------------------------------------------------------*/
     else if(level > 1){
         for(uint16_t i = 0; i < node->keyNum + 1; i++){
             if(!node->isLeaf)
-                abTree_printLevel(node->child[i], level - 1);
+                abTree_printLevel(node->child[i], level - 1, b);
         }
     }
 }
 
 
+/* Creates a node with N elements inside
+ * 
+ * @param abNode_t* parent      : [in] parent of the new node (or NULL if root)
+ * @param abElement_t new_el[]  : [in] Array containing all elements of the node
+ * @param size_t el_len         : [in] Size of the element array
+ * @param abNode_t* new_child[] : [in] Array containing all children (size = el_len  + 1)
+ * @param bool isLeaf           : [in] Is the new node a leaf of not (if yes, the children array will be null)
+ * 
+ * @return abNode_t* : reference to the new node, or NULL if problem
+----------------------------------------------------------------*/
+__static abNode_t* abTree_createNodeNEl(abNode_t const * parent, abElement_t const new_el[], size_t el_len, abNode_t const * const new_child[], bool isLeaf)
+{
+    /* Allocate everything needed
+    ----------------------------------------------------------------*/
+    abNode_t* node = (abNode_t*)__malloc(sizeof(abNode_t));
+    abElement_t* el = (abElement_t*)__malloc(el_len * sizeof(abElement_t));
+    abNode_t** child = isLeaf ? NULL : (abNode_t**)__malloc((el_len + 1) * sizeof(abNode_t*));
 
-abNode_t* abTree_createNodeNEl(abNode_t* parent, abElement_t new_el[], size_t el_len, abNode_t** new_child, bool isLeaf){
-    abNode_t* node = (abNode_t*)malloc(sizeof(abNode_t));
-    abElement_t* el = (void*)1;//(abElement_t*)malloc(el_len * sizeof(abElement_t));
-    abNode_t** child = (void*)1; //isLeaf ? NULL : (abNode_t**)malloc((el_len + 1) * sizeof(abNode_t*));
-
+    /* Check allocation and free if necessary
+    ----------------------------------------------------------------*/
     if(node == NULL || el == NULL || (child == NULL && !isLeaf)){
-        free(node);
-        //free(el);
-        //free(child);
+        __free(node);
+        __free(el);
+        __free(child);
         return NULL;
     }
 
-    //node->el = el;
+    /* Copy relevant information to the new node
+    ----------------------------------------------------------------*/
+    node->el = el;
     node->keyNum = el_len;
-    //node->child = child;
-    node->parent = parent;
+    node->child = child;
+    node->parent = (abNode_t*) parent;
     node->isLeaf = isLeaf;
-
-    memset(node->child, 0, sizeof(node->child));
-    memset(node->el, 0xFF, sizeof(node->el));
 
     memcpy(node->el, new_el, el_len * sizeof(abElement_t));
     if(!isLeaf && new_child != NULL){
         memcpy(node->child, new_child, (el_len + 1) * sizeof(abNode_t*));
     }
 
-    if(isLeaf){
-    }
-
     return node;
 }
 
-abNode_t* abTree_createNode1El(abNode_t* parent, int32_t key, void* data, abNode_t* left_child, abNode_t* right_child, bool isLeaf){
+/* 
+----------------------------------------------------------------*/
+__static abNode_t* abTree_createNode1El(abNode_t const * parent, int32_t key, void const * data, abNode_t const * left_child, abNode_t const * right_child, bool isLeaf)
+{
     abElement_t el = { key };
-    abNode_t* child[] = {left_child, right_child};
+    abNode_t const * child[] = {left_child, right_child};
     return abTree_createNodeNEl(parent, &el, 1, ( (left_child == NULL && right_child == NULL) ? NULL : child), isLeaf);
 }
 
 
 
 void abTree_freeNode(abNode_t* node){
-    //free(node->el);
-    //free(node->child);
-    free(node);
+    __free(node->el);
+    __free(node->child);
+    __free(node);
 }
 
 int32_t abTree_insertEl(abNode_t* node, int32_t key, void* data, abNode_t* new_child){
 
     node->keyNum++;
-    /*node->el = (abElement_t*)realloc(node->el, node->keyNum * sizeof(abElement_t));
+    node->el = (abElement_t*)__realloc(node->el, node->keyNum * sizeof(abElement_t));
 
     if(!node->isLeaf){
-        node->child = (abNode_t**)realloc(node->child, (node->keyNum + 1) * sizeof(abNode_t*));
-    }*/
+        node->child = (abNode_t**)__realloc(node->child, (node->keyNum + 1) * sizeof(abNode_t*));
+    }
 
     int32_t i;
     for(i = node->keyNum; i > 0; i--){
 
         if(!node->isLeaf){
-            if(key < node->child[i - 1]->el[0]){
+            if(key < node->child[i - 1]->el[0].key){
                 node->child[i] = node->child[i - 1]; 
             }
         }
 
         if(i < node->keyNum){
-            if(node->el[i - 1] < key) break;
+            if(node->el[i - 1].key < key) break;
 
             memcpy(&node->el[i], &node->el[i - 1], sizeof(abElement_t));
         }
     }
 
-    node->el[i] = key;
-    //node->el[i].data = data;
+    node->el[i].key = key;
+    node->el[i].data = data;
 
     if(!node->isLeaf){
-        if(new_child->el[0] > key)
+        if(new_child->el[0].key > key)
             node->child[i + 1] = new_child;
         else
             node->child[i] = new_child;
@@ -274,8 +336,8 @@ abNode_t* abTree_splitNode(abNode_t* node){
     abElement_t el = node->el[center_pos];
 
     abNode_t* parent = node->parent != NULL ? node->parent : node;
-    abNode_t* new_node   = abTree_createNodeNEl(parent,     &node->el[0],              center_pos,                     ( (node->isLeaf) ? NULL : &node->child[0]),                 node->isLeaf);
-    abNode_t* new_sister = abTree_createNodeNEl(parent,     &node->el[center_pos + 1], node->keyNum - center_pos - 1,  ( (node->isLeaf) ? NULL : &node->child[center_pos + 1]),    node->isLeaf);
+    abNode_t* new_node   = abTree_createNodeNEl(parent,     &node->el[0],              center_pos,                     ( (node->isLeaf) ? NULL : (abNode_t const * const *) &node->child[0]),                 node->isLeaf);
+    abNode_t* new_sister = abTree_createNodeNEl(parent,     &node->el[center_pos + 1], node->keyNum - center_pos - 1,  ( (node->isLeaf) ? NULL : (abNode_t const * const *) &node->child[center_pos + 1]),    node->isLeaf);
     if(new_node == NULL || new_sister == NULL){
         abTree_freeNode(new_node);
         abTree_freeNode(new_sister);            
@@ -292,21 +354,18 @@ abNode_t* abTree_splitNode(abNode_t* node){
     }
 
     if(node->parent != NULL){
-        int32_t i = abTree_insertEl(node->parent, el, NULL, new_sister);
+        int32_t i = abTree_insertEl(node->parent, el.key, el.data, new_sister);
         node->parent->child[i] = new_node;
         abTree_freeNode(node);
 
         return parent;
     }
     else{       
-        /*node->el    = (abElement_t*)realloc(node->el, sizeof(abElement_t));
-        node->child = (abNode_t**)realloc(node->child, 2 * sizeof(abNode_t*));*/
+        node->el    = (abElement_t*)__realloc(node->el, sizeof(abElement_t));
+        node->child = (abNode_t**)__realloc(node->child, 2 * sizeof(abNode_t*));
 
-        //node->el->data = el.data;
-        for(int i = 0; i < 4; i++) node->el[i] = -1;
-        for(int i = 0; i < 5; i++) node->child[i] = NULL;
-
-        node->el[0] = el;
+        node->el[0].key = el.key;
+        node->el[0].data = el.data;
 
         node->child[0] = new_node;
         node->child[1] = new_sister;
@@ -318,6 +377,8 @@ abNode_t* abTree_splitNode(abNode_t* node){
 }
 
 void abTree_freeTree(abNode_t* node){
+    if(node == NULL) return;
+
     for(int32_t i = 0; !node->isLeaf && i < node->keyNum + 1; i++){
         abTree_freeTree(node->child[i]);
     }
@@ -329,7 +390,7 @@ abNode_t* abTree_searchNode(abNode_t* node, int32_t key, uint16_t* pos, abNode_t
    
     while(node != NULL){
         for(int32_t i = 0; i < node->keyNum + 1; i++){
-            if(i == node->keyNum || key < node->el[i]){
+            if(i == node->keyNum || key < node->el[i].key){
                 if(node->isLeaf){
                     if(insert_node != NULL)
                         *insert_node = node;
@@ -341,7 +402,7 @@ abNode_t* abTree_searchNode(abNode_t* node, int32_t key, uint16_t* pos, abNode_t
                 break;
             }
 
-            else if(key == node->el[i]){
+            else if(key == node->el[i].key){
                 if(pos != NULL) 
                     *pos = i;
                 return node;
@@ -356,7 +417,7 @@ abNode_t* abTree_searchNode(abNode_t* node, int32_t key, uint16_t* pos, abNode_t
 int32_t abTree_removeEl(abNode_t* node, int32_t key, abNode_t** remchild){
 
     int32_t i = 0;
-    for(i = 0; i < node->keyNum && key > node->el[i]; i++) 
+    for(i = 0; i < node->keyNum && key > node->el[i].key; i++) 
         continue;
 
     if(!node->isLeaf && remchild != NULL)
@@ -371,20 +432,13 @@ int32_t abTree_removeEl(abNode_t* node, int32_t key, abNode_t** remchild){
             node->child[j] = node->child[j + 1]; 
         }
     }
-
-    node->el[node->keyNum - 1] = -1;
-    node->child[node->keyNum] = NULL;
     
     node->keyNum--;
-    /*node->el = (abElement_t*) ( (node->keyNum == 0) ? NULL : realloc(node->el,          node->keyNum * sizeof(abElement_t)) );
+    node->el = (abElement_t*) ( (node->keyNum == 0) ? NULL : __realloc(node->el,          node->keyNum * sizeof(abElement_t)) );
 
     if(!node->isLeaf){
-        node->child = (abNode_t**) ( (node->keyNum == 0) ? NULL : realloc(node->child,   (node->keyNum + 1) * sizeof(abNode_t*)) );
-        //node->child[i] = left_child;
-
-        //if(i + 1 <= node->keyNum)
-            //node->child[i + 1] = right_child;
-    }*/
+        node->child = (abNode_t**) ( (node->keyNum == 0) ? NULL : __realloc(node->child,   (node->keyNum + 1) * sizeof(abNode_t*)) );
+    }
 
     return i;
 }
@@ -406,7 +460,7 @@ void* abTree_search(abTree_t* tree, int32_t key){
 -----------------------------------------*/
 abTree_t* abTree_create(uint16_t a, uint16_t b, void (*abTree_conflictCB)(abNode_t* node, int32_t key, void* data))
 {
-    abTree_t* tree = (abTree_t*)malloc(sizeof(abTree_t));
+    abTree_t* tree = (abTree_t*)__malloc(sizeof(abTree_t));
     if(tree == NULL)
         return NULL;
 
@@ -446,7 +500,7 @@ void* abTree_remove(abTree_t* tree, int32_t key){
     if(node == NULL)
         return NULL;
 
-    //void* data = node->el[pos].data;
+    void* data = node->el[pos].data;
 
     if(!node->isLeaf){
         abNode_t* substitute = node->child[pos];
@@ -486,25 +540,25 @@ void* abTree_remove(abTree_t* tree, int32_t key){
             
             if(neighbor_left != NULL && neighbor_left->keyNum > tree->a - 1) {
                 neighbor_left->child[neighbor_left->keyNum - 1] = node;
-                abTree_insertEl(node, node->parent->el[i - 1], NULL /*node->parent->el[i - 1]*/, neighbor_left->isLeaf ? NULL : neighbor_left->child[neighbor_left->keyNum - 1]);
+                abTree_insertEl(node, node->parent->el[i - 1].key, node->parent->el[i - 1].data, neighbor_left->isLeaf ? NULL : neighbor_left->child[neighbor_left->keyNum - 1]);
                 memcpy(&node->parent->el[i - 1],    &neighbor_left->el[neighbor_left->keyNum - 1],  sizeof(abElement_t));
-                abTree_removeEl(neighbor_left,       neighbor_left->el[neighbor_left->keyNum - 1],  NULL);
+                abTree_removeEl(neighbor_left,       neighbor_left->el[neighbor_left->keyNum - 1].key,  NULL);
             }
 
             else if(neighbor_right != NULL && neighbor_right->keyNum > tree->a - 1) {
                 neighbor_right->child[0]->parent = node;
-                abTree_insertEl(node, node->parent->el[i], NULL /*node->parent->el[i]*/, neighbor_right->isLeaf ? NULL : neighbor_right->child[0]);
+                abTree_insertEl(node, node->parent->el[i].key, node->parent->el[i].data, neighbor_right->isLeaf ? NULL : neighbor_right->child[0]);
                 memcpy(&node->parent->el[i],            &neighbor_right->el[0],  sizeof(abElement_t));
-                abTree_removeEl(neighbor_right,          neighbor_right->el[0],  NULL);
+                abTree_removeEl(neighbor_right,          neighbor_right->el[0].key,  NULL);
             }
 
             else {
                 abNode_t* ins_node = neighbor_left != NULL ? neighbor_left : neighbor_right;
                 int32_t elPos = ins_node == neighbor_left ? i - 1 : i;
 
-                abTree_insertEl(ins_node, node->parent->el[elPos], NULL /*node->el[i].data*/, node->isLeaf ? NULL : node->child[0]);
+                abTree_insertEl(ins_node, node->parent->el[elPos].key, node->parent->el[i].data, node->isLeaf ? NULL : node->child[0]);
                 for(int32_t j = 0; j < node->keyNum; j++){
-                    abTree_insertEl(ins_node, node->el[j], NULL /*node->el[j].data*/, node->isLeaf ? NULL : node->child[j + 1]);
+                    abTree_insertEl(ins_node, node->el[j].key, node->el[j].data, node->isLeaf ? NULL : node->child[j + 1]);
 
                     if(!node->isLeaf){
                         if(j == 0) 
@@ -514,38 +568,32 @@ void* abTree_remove(abTree_t* tree, int32_t key){
                     }
                 }
 
-                abTree_removeEl(node->parent, node->parent->el[elPos], NULL);
+                abTree_removeEl(node->parent, node->parent->el[elPos].key, node->parent->el[elPos].data);
                 node->parent->child[elPos] = ins_node;
                 abTree_freeNode(node);
                 node = ins_node->parent;
             }
         }
-
-        //abTree_print(tree);
     }
 
-    return NULL;
+    return data;
 }
 
 /*
 -------------------------------------------------------------*/
 void abTree_print(abTree_t* tree){
-    cur_tree = tree;
     uint32_t h = abTree_getNodeHeight(tree->root);
     for(uint16_t i = 1; i <= h; i++){
-        abTree_printLevel(tree->root, i);
-        fprintf(stdout, "\n");
+        abTree_printLevel(tree->root, i, tree->b);
+        __fprintf(stdout, "\n");
     }
 
-    fflush(stdout);
-    fprintf(stdout, "____________________________________________________________________________\n");
-    fflush(stdout);
-
+    __fprintf(stdout, "____________________________________________________________________________\n");
 }
 
 void abTree_destroy(abTree_t* tree){
     if(tree->root != NULL)
         abTree_freeTree(tree->root);
         
-    free(tree);
+    __free(tree);
 }

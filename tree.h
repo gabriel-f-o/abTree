@@ -8,35 +8,44 @@
 extern "C" {
 #endif
 
+#ifndef __malloc
+#define __malloc    malloc
+#endif
+
+#ifndef __realloc
+#define __realloc   realloc
+#endif
+
+#ifndef __free
+#define __free      free
+#endif
+
+#ifndef __fprintf
+#define __fprintf   fprintf
+#endif
+
+#ifndef __static
+#define __static    static
+#endif
+
 /**********************************
  * PUBLIC TYPES
  **********************************/
 
 /*
 -----------------------------------------*/
-/*typedef struct abElement_s {
+typedef struct abElement_s {
     int32_t key;
-    //void* data;
-} abElement_t;*/
-
-typedef int32_t abElement_t;
+    void* data;
+} abElement_t;
 
 /*
 -----------------------------------------*/
-/*typedef struct abNode_s {
+typedef struct abNode_s {
     struct abNode_s** child;
     struct abNode_s* parent;
 
     abElement_t* el;
-    uint16_t keyNum;
-    bool isLeaf;
-} abNode_t;*/
-
-typedef struct abNode_s {
-    struct abNode_s* child[6];
-    struct abNode_s* parent;
-
-    abElement_t el[5];
     uint16_t keyNum;
     bool isLeaf;
 } abNode_t;
@@ -62,8 +71,6 @@ void* abTree_search(abTree_t* tree, int32_t key);
 void abTree_insert(abTree_t* tree, int32_t key, void* data);
 
 void abTree_print(abTree_t* tree);
-void abTree_printLevel(abNode_t* node, uint32_t level);
-uint32_t abTree_getNodeHeight(abNode_t* node);
 void abTree_destroy(abTree_t* tree);
 void* abTree_remove(abTree_t* tree, int32_t key);
 
