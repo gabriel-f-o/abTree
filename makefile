@@ -26,7 +26,7 @@ endef
 BUILD_DIR := build
 
 #Defines 
-DEFINES := -DUTEST_EN=1 -D__malloc=mock_malloc -D__free=mock_free -D__fprintf=mock_fprintf -D__realloc=mock_realloc
+DEFINES := -DUTEST_EN=1 -D__malloc=mock_malloc -D__free=mock_free -D__fprintf=mock_fprintf -D__realloc=mock_realloc -D__static=
 
 #Directory / files to ignore. Directories / files can overlap
 CSRC_IGNORE_RECURSIVE_DIR := 
@@ -49,13 +49,13 @@ INC_DIR += ./utest/cpputest/include/CppUTest
 INC_DIR += ./utest/cpputest/include/CppUTestExt
 
 #GCC Compiler flags 
-CFLAGS := --coverage -std=c99 -Wall -pedantic
+CFLAGS := --coverage -std=c99 -Wall -pedantic -g3
 CFLAGS += -include ./utest/cpputest/include/CppUTest/MemoryLeakDetectorNewMacros.h
 CFLAGS += -include ./utest/cpputest/include/CppUTest/MemoryLeakDetectorMallocMacros.h
 CFLAGS += -include ./utest/Tests/tests_mocks.h
 
 #G++ Compiler flags 
-CXXFLAGS := -Wall -pedantic -std=c++17
+CXXFLAGS := -Wall -pedantic -std=c++17 -g3
 CXXFLAGS += -include ./utest/cpputest/include/CppUTest/MemoryLeakDetectorNewMacros.h
 CXXFLAGS += -include ./utest/cpputest/include/CppUTest/MemoryLeakDetectorMallocMacros.h
 

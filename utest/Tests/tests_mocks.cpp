@@ -3,13 +3,20 @@
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 
+bool malloc_enable = true;
+
 void* mock_malloc(size_t size){
-	return mock().actualCall(__func__).withParameter("size", size).returnPointerValueOrDefault(malloc(size));
+	if(malloc_enable)
+		return (void*) mock().actualCall(__func__).withParameter("size", size).returnPointerValueOrDefault(malloc(size));
+	else
+		return (void*) mock().actualCall(__func__).withParameter("size", size).returnPointerValueOrDefault(NULL);
 }
 
 void mock_free(void *ptr){
-	free(ptr);
-	mock().actualCall(__func__).withParameter("ptr", ptr);
+	if(malloc_enable && ptr != NULL)
+		free(ptr);
+
+	mock().actualCall(__func__).withPointerParameter("ptr", ptr);
 }
 
 int mock_fprintf(FILE *stream, const char *format, ...){
@@ -28,5 +35,8 @@ int mock_fprintf(FILE *stream, const char *format, ...){
 }
 
 void* mock_realloc(void *ptr, size_t size){
-	return mock().actualCall(__func__).withPointerParameter("ptr", ptr).withParameter("size", size).returnPointerValueOrDefault(realloc(ptr, size));
+	if(malloc_enable)
+		return mock().actualCall(__func__).withPointerParameter("ptr", ptr).withParameter("size", size).returnPointerValueOrDefault(realloc(ptr, size));
+	else
+		return mock().actualCall(__func__).withPointerParameter("ptr", ptr).withParameter("size", size).returnPointerValueOrDefault(NULL);
 }

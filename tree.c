@@ -149,7 +149,7 @@ __static void abTree_printNode(abNode_t const * node, uint32_t level, uint16_t b
             break;
         } 
 
-        if(i < node->keyNum + 1 && i < b)
+        if(i < node->keyNum + 1)
             if(node->child[i] == NULL)
                 __fprintf(stdout, " NULL \U00002502");
             else if(i == b - 1)
@@ -222,10 +222,9 @@ __static void abTree_printLevel(abNode_t const * node, uint32_t level, uint16_t 
 
     /* Otherwise continue to lower levels
     ----------------------------------------------------------------*/
-    else if(level > 1){
+    else {
         for(uint16_t i = 0; i < node->keyNum + 1; i++){
-            if(!node->isLeaf)
-                abTree_printLevel(node->child[i], level - 1, b);
+            abTree_printLevel(node->child[i], level - 1, b);
         }
     }
 }
@@ -274,22 +273,58 @@ __static abNode_t* abTree_createNodeNEl(abNode_t const * parent, abElement_t con
     return node;
 }
 
-/* 
+/* Creates a node with 1 element inside
+ *
+ * @param abNode_t* parent          : [in] Parent of the nez node (NULL if root)
+ * @param int32_t key               : [in] Key to add
+ * @param void* data                : [in] Data to add
+ * @param abNode_t* left_child      : [in] Left child of the new node (or NULL if leaf)
+ * @param abNode_t* right_child     : [in] Right child of the new node (or NULL if leaf)
+ * @param bool isLeaf               : [in] Flag indicating if is a leaf
+ * 
+ * @return abNode_t* : reference to the new node, or NULL if problem
 ----------------------------------------------------------------*/
 __static abNode_t* abTree_createNode1El(abNode_t const * parent, int32_t key, void const * data, abNode_t const * left_child, abNode_t const * right_child, bool isLeaf)
 {
-    abElement_t el = { key };
+    abElement_t el = { .key = key, .data = data };
     abNode_t const * child[] = {left_child, right_child};
-    return abTree_createNodeNEl(parent, &el, 1, ( (left_child == NULL && right_child == NULL) ? NULL : child), isLeaf);
+    return abTree_createNodeNEl(parent, &el, 1, ( isLeaf ? NULL : child), isLeaf);
 }
 
 
-
-void abTree_freeNode(abNode_t* node){
+/* Frees a node, freeing its elements, children (just the array itself) and the node
+ * 
+ * @param abNode_t* node : [in] node to free
+----------------------------------------------------------------*/
+__static void abTree_freeNode(abNode_t* node)
+{
     __free(node->el);
     __free(node->child);
     __free(node);
 }
+
+/* Frees a tree or sub-tree by freeing each node, starting from leaves and then its parents 
+ * 
+ * @param abNode_t* node : [in] root of the tree or sub-tree to free
+----------------------------------------------------------------*/
+__static void abTree_freeTree(abNode_t* node)
+{
+    /* Arg check
+    ----------------------------------------------------------------*/
+    if(node == NULL) 
+        return;
+
+    /* Recusively free children nodes
+    ----------------------------------------------------------------*/
+    for(int32_t i = 0; !node->isLeaf && i < node->keyNum + 1; i++){
+        abTree_freeTree(node->child[i]);
+    }
+
+    /* Free the node itself
+    ----------------------------------------------------------------*/
+    abTree_freeNode(node);
+}
+
 
 int32_t abTree_insertEl(abNode_t* node, int32_t key, void* data, abNode_t* new_child){
 
@@ -376,15 +411,6 @@ abNode_t* abTree_splitNode(abNode_t* node){
     }  
 }
 
-void abTree_freeTree(abNode_t* node){
-    if(node == NULL) return;
-
-    for(int32_t i = 0; !node->isLeaf && i < node->keyNum + 1; i++){
-        abTree_freeTree(node->child[i]);
-    }
-
-    abTree_freeNode(node);
-}
 
 abNode_t* abTree_searchNode(abNode_t* node, int32_t key, uint16_t* pos, abNode_t** insert_node){
    
