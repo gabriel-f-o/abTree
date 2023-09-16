@@ -51,6 +51,94 @@ TEST_GROUP(insertTest)
     }
 };
 
+TEST(insertTest, insert_2_3)
+{
+    abTree_t* t = abTree_create(2, 3, NULL);
+    CHECK(t != NULL);
+
+    for(int i = 100; i <= 1500; i += 200){
+        abTree_insert(t, i, (void*)((intptr_t)i));
+    }
+
+    for(int i = 1600; i >= 200; i -= 200){
+        abTree_insert(t, i, (void*)((intptr_t)i));
+    }
+
+    abTree_insert(t, 401, NULL);
+    abTree_insert(t, 401, NULL);
+    abTree_insert(t, 402, NULL);
+
+    CHECK_EQUAL(1, t->root->keyNum);
+    CHECK_EQUAL(700, t->root->el[0].key);
+
+    
+    CHECK_EQUAL(t->root, t->root->child[0]->parent);
+    CHECK_EQUAL(1, t->root->child[0]->keyNum);
+    CHECK_EQUAL(401, t->root->child[0]->el[0].key);
+
+    CHECK_EQUAL(t->root, t->root->child[1]->parent);
+    CHECK_EQUAL(1, t->root->child[1]->keyNum);
+    CHECK_EQUAL(1300, t->root->child[1]->el[0].key);
+
+
+    CHECK_EQUAL(t->root->child[0], t->root->child[0]->child[0]->parent);
+    CHECK_EQUAL(1, t->root->child[0]->child[0]->keyNum);
+    CHECK_EQUAL(300, t->root->child[0]->child[0]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[0], t->root->child[0]->child[1]->parent);
+    CHECK_EQUAL(1, t->root->child[0]->child[1]->keyNum);
+    CHECK_EQUAL(500, t->root->child[0]->child[1]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[1], t->root->child[1]->child[0]->parent);
+    CHECK_EQUAL(2, t->root->child[1]->child[0]->keyNum);
+    CHECK_EQUAL(900, t->root->child[1]->child[0]->el[0].key);
+    CHECK_EQUAL(1100, t->root->child[1]->child[0]->el[1].key);
+
+    CHECK_EQUAL(t->root->child[1], t->root->child[1]->child[1]->parent);
+    CHECK_EQUAL(1, t->root->child[1]->child[1]->keyNum);
+    CHECK_EQUAL(1500, t->root->child[1]->child[1]->el[0].key);
+
+
+    CHECK_EQUAL(t->root->child[0]->child[0], t->root->child[0]->child[0]->child[0]->parent);
+    CHECK_EQUAL(2, t->root->child[0]->child[0]->child[0]->keyNum);
+    CHECK_EQUAL(100, t->root->child[0]->child[0]->child[0]->el[0].key);
+    CHECK_EQUAL(200, t->root->child[0]->child[0]->child[0]->el[1].key);
+
+    CHECK_EQUAL(t->root->child[0]->child[0], t->root->child[0]->child[0]->child[1]->parent);
+    CHECK_EQUAL(1, t->root->child[0]->child[0]->child[1]->keyNum);
+    CHECK_EQUAL(400, t->root->child[0]->child[0]->child[1]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[0]->child[1], t->root->child[0]->child[1]->child[0]->parent);
+    CHECK_EQUAL(1, t->root->child[0]->child[1]->child[0]->keyNum);
+    CHECK_EQUAL(402, t->root->child[0]->child[1]->child[0]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[0]->child[1], t->root->child[0]->child[1]->child[1]->parent);
+    CHECK_EQUAL(1, t->root->child[0]->child[1]->child[1]->keyNum);
+    CHECK_EQUAL(600, t->root->child[0]->child[1]->child[1]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[1]->child[0], t->root->child[1]->child[0]->child[0]->parent);
+    CHECK_EQUAL(1, t->root->child[1]->child[0]->child[0]->keyNum);
+    CHECK_EQUAL(800, t->root->child[1]->child[0]->child[0]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[1]->child[0], t->root->child[1]->child[0]->child[1]->parent);
+    CHECK_EQUAL(1, t->root->child[1]->child[0]->child[1]->keyNum);
+    CHECK_EQUAL(1000, t->root->child[1]->child[0]->child[1]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[1]->child[0], t->root->child[1]->child[0]->child[2]->parent);
+    CHECK_EQUAL(1, t->root->child[1]->child[0]->child[2]->keyNum);
+    CHECK_EQUAL(1200, t->root->child[1]->child[0]->child[2]->el[0].key);
+    
+    CHECK_EQUAL(t->root->child[1]->child[1], t->root->child[1]->child[1]->child[0]->parent);
+    CHECK_EQUAL(1, t->root->child[1]->child[1]->child[0]->keyNum);
+    CHECK_EQUAL(1400, t->root->child[1]->child[1]->child[0]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[1]->child[1], t->root->child[1]->child[1]->child[1]->parent);
+    CHECK_EQUAL(1, t->root->child[1]->child[1]->child[1]->keyNum);
+    CHECK_EQUAL(1600, t->root->child[1]->child[1]->child[1]->el[0].key);
+
+    abTree_destroy(t);
+}
+
 TEST(insertTest, insert_2_4)
 {
     CHECK_EQUAL(0ULL, (intptr_t)abTree_create(1, 4, NULL));
@@ -76,17 +164,158 @@ TEST(insertTest, insert_2_4)
     CHECK(0 != (intptr_t)abTree_searchNode(t->root, 500, NULL, NULL));
     CHECK(0 != (intptr_t)abTree_searchNode(t->root, 100, NULL, NULL));
     
+
+    CHECK_EQUAL(2, t->root->keyNum);
+    CHECK_EQUAL(700, t->root->el[0].key);
+    CHECK_EQUAL(1500, t->root->el[1].key);
+
+    CHECK_EQUAL(t->root, t->root->child[0]->parent);
+    CHECK_EQUAL(1, t->root->child[0]->keyNum);
+    CHECK_EQUAL(300, t->root->child[0]->el[0].key);
+
+    CHECK_EQUAL(t->root, t->root->child[1]->parent);
+    CHECK_EQUAL(1, t->root->child[1]->keyNum);
+    CHECK_EQUAL(1100, t->root->child[1]->el[0].key);
+    
+    CHECK_EQUAL(t->root, t->root->child[2]->parent);
+    CHECK_EQUAL(3, t->root->child[2]->keyNum);
+    CHECK_EQUAL(1900, t->root->child[2]->el[0].key);
+    CHECK_EQUAL(2100, t->root->child[2]->el[1].key);
+    CHECK_EQUAL(2300, t->root->child[2]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[0], t->root->child[0]->child[0]->parent);
+    CHECK_EQUAL(2, t->root->child[0]->child[0]->keyNum);
+    CHECK_EQUAL(100, t->root->child[0]->child[0]->el[0].key);
+    CHECK_EQUAL(200, t->root->child[0]->child[0]->el[1].key);
+
+    CHECK_EQUAL(t->root->child[0], t->root->child[0]->child[1]->parent);
+    CHECK_EQUAL(3, t->root->child[0]->child[1]->keyNum);
+    CHECK_EQUAL(400, t->root->child[0]->child[1]->el[0].key);
+    CHECK_EQUAL(500, t->root->child[0]->child[1]->el[1].key);
+    CHECK_EQUAL(600, t->root->child[0]->child[1]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[1], t->root->child[1]->child[0]->parent);
+    CHECK_EQUAL(3, t->root->child[1]->child[0]->keyNum);
+    CHECK_EQUAL(800, t->root->child[1]->child[0]->el[0].key);
+    CHECK_EQUAL(900, t->root->child[1]->child[0]->el[1].key);
+    CHECK_EQUAL(1000, t->root->child[1]->child[0]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[1], t->root->child[1]->child[0]->parent);
+    CHECK_EQUAL(3, t->root->child[1]->child[0]->keyNum);
+    CHECK_EQUAL(800, t->root->child[1]->child[0]->el[0].key);
+    CHECK_EQUAL(900, t->root->child[1]->child[0]->el[1].key);
+    CHECK_EQUAL(1000, t->root->child[1]->child[0]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[2], t->root->child[2]->child[0]->parent);
+    CHECK_EQUAL(3, t->root->child[2]->child[0]->keyNum);
+    CHECK_EQUAL(1600, t->root->child[2]->child[0]->el[0].key);
+    CHECK_EQUAL(1700, t->root->child[2]->child[0]->el[1].key);
+    CHECK_EQUAL(1800, t->root->child[2]->child[0]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[2], t->root->child[2]->child[1]->parent);
+    CHECK_EQUAL(1, t->root->child[2]->child[1]->keyNum);
+    CHECK_EQUAL(2000, t->root->child[2]->child[1]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[2], t->root->child[2]->child[2]->parent);
+    CHECK_EQUAL(1, t->root->child[2]->child[2]->keyNum);
+    CHECK_EQUAL(2200, t->root->child[2]->child[2]->el[0].key);
+
+    CHECK_EQUAL(t->root->child[2], t->root->child[2]->child[3]->parent);
+    CHECK_EQUAL(3, t->root->child[2]->child[3]->keyNum);
+    CHECK_EQUAL(2400, t->root->child[2]->child[3]->el[0].key);
+    CHECK_EQUAL(2500, t->root->child[2]->child[3]->el[1].key);
+    CHECK_EQUAL(2600, t->root->child[2]->child[3]->el[2].key);
+
+
     abTree_print(t);
     abTree_destroy(t);
 }
 
-TEST(insertTest, insert_4_8)
+TEST(insertTest, insert_4_7)
 {
-    abTree_t* t = abTree_create(4, 8, NULL);
-    for(int i = 100; i <= 4000; i += 100)
+    abTree_t* t = abTree_create(4, 7, NULL);
+    for(int i = 100; i <= 3900; i += 200)
         abTree_insert(t, i, (void*)((intptr_t)i));
 
-    abTree_insert(t, 100, (void*)((intptr_t)50ULL));
+    for(int i = 200; i <= 4000; i += 200)
+        abTree_insert(t, i, (void*)((intptr_t)i));
+    
+
+    CHECK_EQUAL(1, t->root->keyNum);
+    CHECK_EQUAL(1900, t->root->el[0].key);
+
+    CHECK_EQUAL(t->root, t->root->child[0]->parent);
+    CHECK_EQUAL(3, t->root->child[0]->keyNum);
+    CHECK_EQUAL(700, t->root->child[0]->el[0].key);
+    CHECK_EQUAL(1100, t->root->child[0]->el[1].key);
+    CHECK_EQUAL(1500, t->root->child[0]->el[2].key);
+
+    CHECK_EQUAL(t->root, t->root->child[1]->parent);
+    CHECK_EQUAL(4, t->root->child[1]->keyNum);
+    CHECK_EQUAL(2300, t->root->child[1]->el[0].key);
+    CHECK_EQUAL(2700, t->root->child[1]->el[1].key);
+    CHECK_EQUAL(3100, t->root->child[1]->el[2].key);
+    CHECK_EQUAL(3500, t->root->child[1]->el[3].key);
+
+
+    CHECK_EQUAL(t->root->child[0], t->root->child[0]->child[0]->parent);
+    CHECK_EQUAL(6, t->root->child[0]->child[0]->keyNum);
+    CHECK_EQUAL(100, t->root->child[0]->child[0]->el[0].key);
+    CHECK_EQUAL(200, t->root->child[0]->child[0]->el[1].key);
+    CHECK_EQUAL(300, t->root->child[0]->child[0]->el[2].key);
+    CHECK_EQUAL(400, t->root->child[0]->child[0]->el[3].key);
+    CHECK_EQUAL(500, t->root->child[0]->child[0]->el[4].key);
+    CHECK_EQUAL(600, t->root->child[0]->child[0]->el[5].key);
+    
+    CHECK_EQUAL(t->root->child[0], t->root->child[0]->child[1]->parent);
+    CHECK_EQUAL(3, t->root->child[0]->child[1]->keyNum);
+    CHECK_EQUAL( 800, t->root->child[0]->child[1]->el[0].key);
+    CHECK_EQUAL( 900, t->root->child[0]->child[1]->el[1].key);
+    CHECK_EQUAL(1000, t->root->child[0]->child[1]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[0], t->root->child[0]->child[2]->parent);
+    CHECK_EQUAL(3, t->root->child[0]->child[2]->keyNum);
+    CHECK_EQUAL(1200, t->root->child[0]->child[2]->el[0].key);
+    CHECK_EQUAL(1300, t->root->child[0]->child[2]->el[1].key);
+    CHECK_EQUAL(1400, t->root->child[0]->child[2]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[0], t->root->child[0]->child[3]->parent);
+    CHECK_EQUAL(3, t->root->child[0]->child[3]->keyNum);
+    CHECK_EQUAL(1600, t->root->child[0]->child[3]->el[0].key);
+    CHECK_EQUAL(1700, t->root->child[0]->child[3]->el[1].key);
+    CHECK_EQUAL(1800, t->root->child[0]->child[3]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[1], t->root->child[1]->child[0]->parent);
+    CHECK_EQUAL(3, t->root->child[1]->child[0]->keyNum);
+    CHECK_EQUAL(2000, t->root->child[1]->child[0]->el[0].key);
+    CHECK_EQUAL(2100, t->root->child[1]->child[0]->el[1].key);
+    CHECK_EQUAL(2200, t->root->child[1]->child[0]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[1], t->root->child[1]->child[1]->parent);
+    CHECK_EQUAL(3, t->root->child[1]->child[1]->keyNum);
+    CHECK_EQUAL(2400, t->root->child[1]->child[1]->el[0].key);
+    CHECK_EQUAL(2500, t->root->child[1]->child[1]->el[1].key);
+    CHECK_EQUAL(2600, t->root->child[1]->child[1]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[1], t->root->child[1]->child[2]->parent);
+    CHECK_EQUAL(3, t->root->child[1]->child[2]->keyNum);
+    CHECK_EQUAL(2800, t->root->child[1]->child[2]->el[0].key);
+    CHECK_EQUAL(2900, t->root->child[1]->child[2]->el[1].key);
+    CHECK_EQUAL(3000, t->root->child[1]->child[2]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[1], t->root->child[1]->child[3]->parent);
+    CHECK_EQUAL(3, t->root->child[1]->child[3]->keyNum);
+    CHECK_EQUAL(3200, t->root->child[1]->child[3]->el[0].key);
+    CHECK_EQUAL(3300, t->root->child[1]->child[3]->el[1].key);
+    CHECK_EQUAL(3400, t->root->child[1]->child[3]->el[2].key);
+
+    CHECK_EQUAL(t->root->child[1], t->root->child[1]->child[4]->parent);
+    CHECK_EQUAL(5, t->root->child[1]->child[4]->keyNum);
+    CHECK_EQUAL(3600, t->root->child[1]->child[4]->el[0].key);
+    CHECK_EQUAL(3700, t->root->child[1]->child[4]->el[1].key);
+    CHECK_EQUAL(3800, t->root->child[1]->child[4]->el[2].key);
+    CHECK_EQUAL(3900, t->root->child[1]->child[4]->el[3].key);
+    CHECK_EQUAL(4000, t->root->child[1]->child[4]->el[4].key);
 
     abTree_print(t);
     abTree_destroy(t);
@@ -321,6 +550,9 @@ TEST(insertTest, insertEl)
     CHECK_EQUAL(1, node->child[3]->keyNum);
     CHECK_EQUAL(55, node->child[3]->el[0].key);
     CHECK_EQUAL(110LL, (intptr_t)node->child[3]->el[0].data);
+
+    abTree_insertEl(node, 60, NULL, NULL);
+    node->keyNum--;
 
     abTree_freeTree(node);
 }

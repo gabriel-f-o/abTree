@@ -124,9 +124,9 @@ CDEP := $(COBJ:%.o=%.d)
 #Declare default targets
 .PHONY : exe clean clear
 exe: $(BUILD_DIR)/main.exe
-	chcp 65001
-	$(^)
-	python -m gcovr -r ./ --html-details $(BUILD_DIR)/cover.html
+#chcp 65001
+#$(^)
+#python -m gcovr -r ./ --html-details $(BUILD_DIR)/cover.html
 
 #Declare the first target. Syntax is 
 #target: dependency1 dependency2... dependencyN

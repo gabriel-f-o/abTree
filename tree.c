@@ -13,6 +13,17 @@
 #include <wchar.h>
 
 /**********************************************************
+ * PRIVATE TYPES
+ *********************************************************/
+
+/* Enum used to choose which child to keep in the removeEl function
+----------------------------------------------------------------*/
+typedef enum {
+    ABTREE_KEEP_LEFT_CHILD,
+    ABTREE_KEEP_RIGHT_CHILD
+}abTree_keepChild_e;
+
+/**********************************************************
  * PRIVATE FUNCTIONS
  *********************************************************/
 
@@ -45,7 +56,7 @@ __static void abTree_printNode(abNode_t const * node, uint32_t level, uint16_t b
     ----------------------------------------------------------------*/
     int pos = -1;
     for(int i = 0; i < line_len; i++) {
-             if(i == 0)                 { __fprintf(stdout, "\U00002503 L%03d ", level); i += 6; }
+             if(i == 0)                 { __fprintf(stdout, "\U00002503 L%03u ", level); i += 6; }
         else if(i == 7)                   __fprintf(stdout, "\U00002502");
         else if(i == line_len - 1)        __fprintf(stdout, "\U00002503\n");
         else  { 
@@ -112,10 +123,10 @@ __static void abTree_printNode(abNode_t const * node, uint32_t level, uint16_t b
     printf ("\U00002503");
     for(uint16_t i = 0; i < b - 1; i++){
         if(node->el == NULL){
-            for(int i = 1; i < line_len; i++) {
-                if(i == line_len - 1)           __fprintf(stdout, "\U00002503\n");
-                else if(i < line_len / 2 - 2)   __fprintf(stdout, " ");
-                else if(i == line_len / 2 - 2)  { __fprintf(stdout, "NULL"); i += 3; }
+            for(int j = 1; j < line_len; j++) {
+                if(j == line_len - 1)           __fprintf(stdout, "\U00002503\n");
+                else if(j < line_len / 2 - 2)   __fprintf(stdout, " ");
+                else if(j == line_len / 2 - 2)  { __fprintf(stdout, "NULL"); j += 3; }
                 else                            __fprintf(stdout, " ");
             }
 
@@ -147,10 +158,10 @@ __static void abTree_printNode(abNode_t const * node, uint32_t level, uint16_t b
     printf ("\U00002503");
     for(uint16_t i = 0; i < b; i++){
         if(node->isLeaf){
-            for(int i = 1; i < line_len; i++) {
-                if(i == line_len - 1)           __fprintf(stdout, "\U00002503\n");
-                else if(i < line_len / 2 - 2)   __fprintf(stdout, " ");
-                else if(i == line_len / 2 - 2)  { __fprintf(stdout, "NULL"); i += 3; }
+            for(int j = 1; j < line_len; j++) {
+                if(j == line_len - 1)           __fprintf(stdout, "\U00002503\n");
+                else if(j < line_len / 2 - 2)   __fprintf(stdout, " ");
+                else if(j == line_len / 2 - 2)  { __fprintf(stdout, "NULL"); j += 3; }
                 else                            __fprintf(stdout, " ");
             }
 
@@ -391,7 +402,7 @@ __static int32_t abTree_insertEl(abNode_t* node, int32_t key, void const * data,
 
     /* Position new child in the correct position
     ----------------------------------------------------------------*/
-    if(!node->isLeaf){
+    if(!node->isLeaf && new_child != NULL){
         if(new_child->el[0].key > key)
             node->child[i + 1] = (abNode_t*) new_child;
         else
@@ -532,14 +543,11 @@ __static abNode_t* abTree_searchNode(abNode_t const * node, int32_t key, uint16_
 }
 
 
-int32_t abTree_removeEl(abNode_t* node, int32_t key, abNode_t** remchild){
+int32_t abTree_removeEl(abNode_t* node, int32_t key, abTree_keepChild_e keep){
 
     int32_t i = 0;
     for(i = 0; i < node->keyNum && key > node->el[i].key; i++) 
         continue;
-
-    if(!node->isLeaf && remchild != NULL)
-        *remchild = node->child[i];
 
     for(int32_t j = i; j < node->keyNum; j++){ 
 
@@ -551,11 +559,16 @@ int32_t abTree_removeEl(abNode_t* node, int32_t key, abNode_t** remchild){
         }
     }
     
-    node->keyNum--;
-    node->el = (abElement_t*) ( (node->keyNum == 0) ? NULL : __realloc(node->el,          node->keyNum * sizeof(abElement_t)) );
+    if(--node->keyNum == 0){
+        __free(node->el);
+        node->el = (void*) NULL;
+    }
+    else{
+        node->el = (abElement_t*) __realloc(node->el, node->keyNum * sizeof(abElement_t));
+    }
 
     if(!node->isLeaf){
-        node->child = (abNode_t**) ( (node->keyNum == 0) ? NULL : __realloc(node->child,   (node->keyNum + 1) * sizeof(abNode_t*)) );
+        node->child = (abNode_t**) __realloc(node->child,   (node->keyNum + 1) * sizeof(abNode_t*));
     }
 
     return i;
@@ -658,7 +671,7 @@ void abTree_insert(abTree_t* tree, int32_t key, void const * data)
     }
 }
 
-
+int minhajeba;
 void* abTree_remove(abTree_t* tree, int32_t key){
     uint16_t pos;
     abNode_t* node = abTree_searchNode(tree->root, key, &pos, NULL);
@@ -681,19 +694,24 @@ void* abTree_remove(abTree_t* tree, int32_t key){
         pos = substitute->keyNum - 1;
     }
 
-    abTree_removeEl(node, key, NULL);
+    abTree_removeEl(node, key, ABTREE_KEEP_LEFT_CHILD);
 
-    while( (node->parent == NULL && node->keyNum <= 0) || (node->parent != NULL && node->keyNum < tree->a - 1)){
+    while( (node->parent == NULL && node->keyNum == 0) || (node->parent != NULL && node->keyNum < tree->a - 1)){
 
         if(node->parent == NULL){
             if(node->keyNum == 0){
-                tree->root = node->child == NULL ? NULL : node->child[0];
-                tree->root->parent = NULL;
+                if(node->isLeaf)
+                    tree->root = NULL;
+                else{
+                    tree->root = node->child[0];
+                    tree->root->parent = NULL;
+                }
+
                 abTree_freeNode(node);
             }
         }
 
-        else if(node->keyNum < tree->a - 1){
+        else {
             int32_t i;
             for(i = 0; i < node->parent->keyNum + 1; i++){
                 if(node->parent->child[i] == node) 
@@ -704,17 +722,21 @@ void* abTree_remove(abTree_t* tree, int32_t key){
             abNode_t* neighbor_right = (i == node->parent->keyNum) ? NULL : node->parent->child[i + 1];
             
             if(neighbor_left != NULL && neighbor_left->keyNum > tree->a - 1) {
-                neighbor_left->child[neighbor_left->keyNum - 1] = node;
-                abTree_insertEl(node, node->parent->el[i - 1].key, node->parent->el[i - 1].data, neighbor_left->isLeaf ? NULL : neighbor_left->child[neighbor_left->keyNum - 1]);
+                if(!neighbor_left->isLeaf)
+                    neighbor_left->child[neighbor_left->keyNum]->parent = node;
+                    
+                abTree_insertEl(node, node->parent->el[i - 1].key, node->parent->el[i - 1].data, neighbor_left->isLeaf ? NULL : neighbor_left->child[neighbor_left->keyNum]);
                 memcpy(&node->parent->el[i - 1],    &neighbor_left->el[neighbor_left->keyNum - 1],  sizeof(abElement_t));
-                abTree_removeEl(neighbor_left,       neighbor_left->el[neighbor_left->keyNum - 1].key,  NULL);
+                abTree_removeEl(neighbor_left,       neighbor_left->el[neighbor_left->keyNum - 1].key, ABTREE_KEEP_LEFT_CHILD);
             }
 
             else if(neighbor_right != NULL && neighbor_right->keyNum > tree->a - 1) {
-                neighbor_right->child[0]->parent = node;
+                if(!neighbor_right->isLeaf)
+                    neighbor_right->child[0]->parent = node;
+
                 abTree_insertEl(node, node->parent->el[i].key, node->parent->el[i].data, neighbor_right->isLeaf ? NULL : neighbor_right->child[0]);
                 memcpy(&node->parent->el[i],            &neighbor_right->el[0],  sizeof(abElement_t));
-                abTree_removeEl(neighbor_right,          neighbor_right->el[0].key,  NULL);
+                abTree_removeEl(neighbor_right,          neighbor_right->el[0].key, ABTREE_KEEP_RIGHT_CHILD);
             }
 
             else {
@@ -733,11 +755,17 @@ void* abTree_remove(abTree_t* tree, int32_t key){
                     }
                 }
 
-                abTree_removeEl(node->parent, node->parent->el[elPos].key, node->parent->el[elPos].data);
+                abTree_removeEl(node->parent, node->parent->el[elPos].key, ABTREE_KEEP_LEFT_CHILD);
                 node->parent->child[elPos] = ins_node;
+
                 abTree_freeNode(node);
                 node = ins_node->parent;
             }
+        }
+
+        if(--minhajeba == 0){
+            abTree_print(tree);
+            exit(0);
         }
     }
 
