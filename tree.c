@@ -1,3 +1,11 @@
+/*
+ * tree.c
+ *
+ *  Created on: Sep 10, 2023
+ *      Author: Gabriel
+ */
+
+
 #include "tree.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -286,7 +294,7 @@ __static abNode_t* abTree_createNodeNEl(abNode_t const * parent, abElement_t con
 ----------------------------------------------------------------*/
 __static abNode_t* abTree_createNode1El(abNode_t const * parent, int32_t key, void const * data, abNode_t const * left_child, abNode_t const * right_child, bool isLeaf)
 {
-    abElement_t el = { .key = key, .data = data };
+    abElement_t el = { .key = key, .data = (void*)data };
     abNode_t const * child[] = {left_child, right_child};
     return abTree_createNodeNEl(parent, &el, 1, ( isLeaf ? NULL : child), isLeaf);
 }
@@ -298,6 +306,13 @@ __static abNode_t* abTree_createNode1El(abNode_t const * parent, int32_t key, vo
 ----------------------------------------------------------------*/
 __static void abTree_freeNode(abNode_t* node)
 {
+    /* Arg check
+    ----------------------------------------------------------------*/
+    if(node == NULL) 
+        return;
+
+    /* Free arrays and then the node
+    ----------------------------------------------------------------*/
     __free(node->el);
     __free(node->child);
     __free(node);
@@ -326,8 +341,20 @@ __static void abTree_freeTree(abNode_t* node)
 }
 
 
-int32_t abTree_insertEl(abNode_t* node, int32_t key, void* data, abNode_t* new_child){
-
+/* Insert an element into a node. If the node is not a leaf, the child will be added in order to maintain the tree's structure 
+ * (i.e. node->child[0].key[0] < node.key[0] < node->child[1].key[0] < node.key[1] ...)
+ * 
+ * @param abNode_t* node        : [in] Node to put the element
+ * @param int32_t key           : [in] Key of the new element
+ * @param void* data            : [in] Data of the new element
+ * @param abNode_t* new_child   : [in] The new chil
+ * 
+ * @return int32_t : the position the element was inserted 
+----------------------------------------------------------------*/
+__static int32_t abTree_insertEl(abNode_t* node, int32_t key, void const * data, abNode_t const * new_child)
+{
+    /* Reallocate the arrays
+    ----------------------------------------------------------------*/
     node->keyNum++;
     node->el = (abElement_t*)__realloc(node->el, node->keyNum * sizeof(abElement_t));
 
@@ -335,42 +362,71 @@ int32_t abTree_insertEl(abNode_t* node, int32_t key, void* data, abNode_t* new_c
         node->child = (abNode_t**)__realloc(node->child, (node->keyNum + 1) * sizeof(abNode_t*));
     }
 
+    /* Move children and elements to maintain sorting. e.g. inserting 3 on [1, 2, 4, 5, X] will result in [1, 2, X, 3, 4]
+    ----------------------------------------------------------------*/
     int32_t i;
-    for(i = node->keyNum; i > 0; i--){
-
+    for(i = node->keyNum; i > 0; i--)
+    {
+        /* Move children depending on the current key
+        ----------------------------------------------------------------*/ 
         if(!node->isLeaf){
             if(key < node->child[i - 1]->el[0].key){
-                node->child[i] = node->child[i - 1]; 
+                node->child[i] = (abNode_t*) node->child[i - 1]; 
             }
         }
 
+        /* Move element depending on the current key
+        ----------------------------------------------------------------*/
         if(i < node->keyNum){
-            if(node->el[i - 1].key < key) break;
+            if(node->el[i - 1].key < key) break; //Stop if we are in the correct place
 
             memcpy(&node->el[i], &node->el[i - 1], sizeof(abElement_t));
         }
     }
 
+    /* Copy contents into the correct position
+    ----------------------------------------------------------------*/
     node->el[i].key = key;
-    node->el[i].data = data;
+    node->el[i].data = (void*)data;
 
+    /* Position new child in the correct position
+    ----------------------------------------------------------------*/
     if(!node->isLeaf){
         if(new_child->el[0].key > key)
-            node->child[i + 1] = new_child;
+            node->child[i + 1] = (abNode_t*) new_child;
         else
-            node->child[i] = new_child;
+            node->child[i] = (abNode_t*) new_child;
     }
 
+    /* Return inserted position
+    ----------------------------------------------------------------*/
     return i;
 }
 
-abNode_t* abTree_splitNode(abNode_t* node){
-
+/* Split a node in half - 1, creating 2 new children nodes. The parent node will receive a key to keep the tree's integrity.
+ * Because of this, the parent might have too many keys, making necessary to call this function again, but for the parent. 
+ * The children's children parent pointer must be updated to point to the correct parent, since a parent node can be split as well.
+ * In case of the root, we need to do a different method of splitting to not break the tree->root reference
+ * The split is done in a way that the 3 nodes (2 children + the splitted node) have between a and b - 1 keys.
+ * 
+ * @param abNode_t* node        : [in] Node to split
+ * 
+ * @return abNode_t* : the node's parent 
+----------------------------------------------------------------*/
+__static abNode_t* abTree_splitNode(abNode_t* node)
+{
+    /* Get the center element to make calculations easier
+    ----------------------------------------------------------------*/
     uint16_t center_pos = (node->keyNum - 1)/ 2;
+    abElement_t center_el = node->el[center_pos];
 
-    abElement_t el = node->el[center_pos];
-
+    /* The root pointer must be kept the same to not break the tree->root reference, 
+     * so we convert the root node into the parent and attach the 2 children into it
+    ----------------------------------------------------------------*/    
     abNode_t* parent = node->parent != NULL ? node->parent : node;
+    
+    /* Create children node and check for allocation
+    ----------------------------------------------------------------*/
     abNode_t* new_node   = abTree_createNodeNEl(parent,     &node->el[0],              center_pos,                     ( (node->isLeaf) ? NULL : (abNode_t const * const *) &node->child[0]),                 node->isLeaf);
     abNode_t* new_sister = abTree_createNodeNEl(parent,     &node->el[center_pos + 1], node->keyNum - center_pos - 1,  ( (node->isLeaf) ? NULL : (abNode_t const * const *) &node->child[center_pos + 1]),    node->isLeaf);
     if(new_node == NULL || new_sister == NULL){
@@ -379,28 +435,35 @@ abNode_t* abTree_splitNode(abNode_t* node){
         return NULL;
     } 
 
+    /* If the node to split is not a leaf, we must update the children's parents to the newly created nodes
+    ----------------------------------------------------------------*/
     if(!node->isLeaf){
         for(int32_t i = 0; i < node->keyNum + 1; i++){
             if(i <= center_pos)
                 node->child[i]->parent = new_node;
-            else if(i > center_pos)
+            else
                 node->child[i]->parent = new_sister;
         }
     }
 
+    /* In the case the node is not the root, just send a key to the parent, splitting the remaining keys into the 2 children
+    ----------------------------------------------------------------*/
     if(node->parent != NULL){
-        int32_t i = abTree_insertEl(node->parent, el.key, el.data, new_sister);
-        node->parent->child[i] = new_node;
+        int32_t i = abTree_insertEl(node->parent, center_el.key, center_el.data, new_sister);
+        node->parent->child[i] = new_node; //update child pointer because we need to free the current node
         abTree_freeNode(node);
 
         return parent;
     }
+
+    /* If it's the root, we modify the node keeping its reference
+    ----------------------------------------------------------------*/
     else{       
         node->el    = (abElement_t*)__realloc(node->el, sizeof(abElement_t));
         node->child = (abNode_t**)__realloc(node->child, 2 * sizeof(abNode_t*));
 
-        node->el[0].key = el.key;
-        node->el[0].data = el.data;
+        node->el[0].key = center_el.key;
+        node->el[0].data = center_el.data;
 
         node->child[0] = new_node;
         node->child[1] = new_sister;
@@ -412,27 +475,56 @@ abNode_t* abTree_splitNode(abNode_t* node){
 }
 
 
-abNode_t* abTree_searchNode(abNode_t* node, int32_t key, uint16_t* pos, abNode_t** insert_node){
-   
-    while(node != NULL){
-        for(int32_t i = 0; i < node->keyNum + 1; i++){
-            if(i == node->keyNum || key < node->el[i].key){
+/* Search a node that contains a certain key
+ * 
+ * @param abNode_t* node            : [ in] The root of the tree or sub-tree
+ * @param int32_t key   	        : [ in] Key to search for
+ * @param uint16_t* pos             : [out] Position of the key in the element array (NULL to ignore)
+ * @param abNode_t** insert_node    : [out] Pointer to the node where the key should be, if the key was not found (NULL to ignore)
+ * 
+ * @return abNode_t* : Node that contains the key, or NULL if not found
+----------------------------------------------------------------*/
+__static abNode_t* abTree_searchNode(abNode_t const * node, int32_t key, uint16_t* pos, abNode_t** insert_node)
+{   
+    /* While we are not at the end of the tree
+    ----------------------------------------------------------------*/
+    while(node != NULL)
+    {
+        /* Search for each key
+        ----------------------------------------------------------------*/
+        int32_t i = 0;
+        while(1)
+        {
+            /* Key dos not exist where it should be, so we go to one of the children
+            ----------------------------------------------------------------*/
+            if(i == node->keyNum || key < node->el[i].key)
+            {
+                /* If the node is a leaf, there are no children so we just return
+                ----------------------------------------------------------------*/
                 if(node->isLeaf){
                     if(insert_node != NULL)
-                        *insert_node = node;
+                        *insert_node = (abNode_t*)node;
 
                     node = NULL;
                 }
+
+                /* Otherwise we must check the child's keys
+                ----------------------------------------------------------------*/
                 else
                     node = node->child[i];
+
                 break;
             }
 
+            /* The key was found, return the node and the position
+            ----------------------------------------------------------------*/
             else if(key == node->el[i].key){
                 if(pos != NULL) 
                     *pos = i;
-                return node;
+                return (abNode_t*) node;
             }
+
+            i++;
         }
     }
 
@@ -471,25 +563,34 @@ int32_t abTree_removeEl(abNode_t* node, int32_t key, abNode_t** remchild){
 
 
 
-/**********************************
+/**********************************************************
  * PUBLIC FUNCTIONS
- **********************************/
+ *********************************************************/
 
-void* abTree_search(abTree_t* tree, int32_t key){
-    uint16_t pos = 0;
-    abNode_t* node = abTree_searchNode(tree->root, key, &pos, NULL);
 
-    return node != NULL ? NULL : NULL;
-}
-
-/*
------------------------------------------*/
-abTree_t* abTree_create(uint16_t a, uint16_t b, void (*abTree_conflictCB)(abNode_t* node, int32_t key, void* data))
+/* Creates a tree
+ * 
+ * @param uint16_t a                      : [in] Tree's minimum amount of children (at least 2)
+ * @param uint16_t b                      : [in] Tree's maximum amount of children (at least 2 * a - 1)
+ * @param abConflict_fn abTree_conflictCB : [in] Callback to be called in case of an insert conflict (inserting the same key twice). NULL to ignore
+ * 
+ * @return void* : The data associated to the key, or NULL if not found
+----------------------------------------------------------------*/
+abTree_t* abTree_create(uint16_t a, uint16_t b, abConflict_fn abTree_conflictCB)
 {
+    /* Arg check
+    ----------------------------------------------------------------*/
+    if(a < 2) return NULL;
+    if(b < 2 * a - 1) return NULL;
+
+    /* Create tree
+    ----------------------------------------------------------------*/
     abTree_t* tree = (abTree_t*)__malloc(sizeof(abTree_t));
     if(tree == NULL)
         return NULL;
 
+    /* Copy data into the structure and return
+    ----------------------------------------------------------------*/
     tree->a = a;
     tree->b = b;
     tree->conflict_cb = abTree_conflictCB;
@@ -498,22 +599,60 @@ abTree_t* abTree_create(uint16_t a, uint16_t b, void (*abTree_conflictCB)(abNode
     return tree;
 }
 
-/*
--------------------------------------------------------------*/
-void abTree_insert(abTree_t* tree, int32_t key, void* data){
-    if(tree->root != NULL){
+/* Search a key in the tree
+ * 
+ * @param abTree_t* tree : [ in] The tree to search
+ * @param int32_t key    : [ in] Key to search for
+ * 
+ * @return void* : The data associated to the key, or NULL if not found
+----------------------------------------------------------------*/
+void* abTree_search(abTree_t const * tree, int32_t key)
+{
+    /* Search tree
+    ----------------------------------------------------------------*/
+    uint16_t pos = 0;
+    abNode_t* node = abTree_searchNode(tree->root, key, &pos, NULL);
+
+    /* Return NULL if not found, or the data
+    ----------------------------------------------------------------*/
+    return node == NULL ? NULL : node->el[pos].data;
+}
+
+/* Insert a key into the tree
+ * 
+ * @param abTree_t* tree : [in] The tree to add
+ * @param int32_t key    : [in] Key to be added
+ * @param void* data     : [in] Data associated with the key
+----------------------------------------------------------------*/
+void abTree_insert(abTree_t* tree, int32_t key, void const * data)
+{
+    /* If there already is a root, insert it into the tree
+    ----------------------------------------------------------------*/
+     if(tree->root != NULL){
+
+        /* Search for the key and return if it already exists
+        ----------------------------------------------------------------*/
+        uint16_t pos = 0;
         abNode_t* insert_node;
-        abNode_t* node = abTree_searchNode(tree->root, key, NULL, &insert_node);
+        abNode_t* node = abTree_searchNode(tree->root, key, &pos, &insert_node);
         if(node != NULL){
-            if(tree->conflict_cb != NULL) tree->conflict_cb(node, key, data);
+            if(tree->conflict_cb != NULL) tree->conflict_cb(node, key, (void*) node->el[pos].data);
             return;
         }
 
+        /* Insert key into the node. If the node has too many keys, split it.
+         * To split a node, the central key is removed, and the other keys are assigned to 2 nodes (one for lower keys and the other for greater keys)
+         * If the node is the root, the central key is assigned to a node, that becomes the new root
+         * If the node has a paret, the central key is added to the parent. In this case, we might have to split it as well
+        ----------------------------------------------------------------*/
         abTree_insertEl(insert_node, key, data, NULL);
-        while(insert_node != NULL && insert_node->keyNum >= tree->b){
+        while(insert_node->keyNum >= tree->b){
             insert_node = abTree_splitNode(insert_node);
         }
     }
+
+    /* Otherwise just create the root node
+    ----------------------------------------------------------------*/
     else{
         tree->root = abTree_createNode1El(NULL, key, data, NULL, NULL, true);
     }
@@ -605,9 +744,11 @@ void* abTree_remove(abTree_t* tree, int32_t key){
     return data;
 }
 
-/*
--------------------------------------------------------------*/
-void abTree_print(abTree_t* tree){
+/* Print the whole tree
+ * 
+ * @param abTree_t* tree : [in] The tree to print
+----------------------------------------------------------------*/
+void abTree_print(abTree_t const * tree){
     uint32_t h = abTree_getNodeHeight(tree->root);
     for(uint16_t i = 1; i <= h; i++){
         abTree_printLevel(tree->root, i, tree->b);
@@ -617,6 +758,10 @@ void abTree_print(abTree_t* tree){
     __fprintf(stdout, "____________________________________________________________________________\n");
 }
 
+/* Destroy the tree, de-allocating every node
+ * 
+ * @param abTree_t* tree : [in] The tree to de-allocate
+----------------------------------------------------------------*/
 void abTree_destroy(abTree_t* tree){
     if(tree->root != NULL)
         abTree_freeTree(tree->root);

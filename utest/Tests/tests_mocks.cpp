@@ -4,6 +4,7 @@
 #include "CppUTestExt/MockSupport.h"
 
 bool malloc_enable = true;
+bool print_enable = false;
 
 void* mock_malloc(size_t size){
 	if(malloc_enable)
@@ -20,18 +21,18 @@ void mock_free(void *ptr){
 }
 
 int mock_fprintf(FILE *stream, const char *format, ...){
-#if 0
-	va_list args;
-	va_start(args, format);
-	
-	auto ret = mock().actualCall(__func__).returnIntValueOrDefault(vfprintf(stream, format, args));
-	
-	va_end(args);
-	
-	return ret;
-#else
+	if(print_enable){
+		va_list args;
+		va_start(args, format);
+		
+		auto ret = mock().actualCall(__func__).returnIntValueOrDefault(vfprintf(stream, format, args));
+		
+		va_end(args);
+		
+		return ret;
+	}
+
 	return 0;
-#endif
 }
 
 void* mock_realloc(void *ptr, size_t size){
