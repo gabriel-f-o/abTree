@@ -16,11 +16,9 @@
 extern "C" {
 #endif
 
-
 /**********************************************************
  * DEFINES (will be overwritten by utests)
  *********************************************************/
-
 
 #ifndef __malloc
 #define __malloc    malloc
@@ -42,11 +40,9 @@ extern "C" {
 #define __static    static
 #endif
 
-
 /**********************************************************
  * PUBLIC TYPES
  *********************************************************/
-
 
 /* Element of a node
 ----------------------------------------------------------------*/
@@ -83,11 +79,9 @@ typedef struct abTree_s {
     uint16_t b;                 //Maximum number of children (at least 2 * a - 1)
 } abTree_t;
 
-
 /**********************************************************
  * PUBLIC FUNCTIONS
  *********************************************************/
-
 
 /* Creates a tree
  * 
@@ -116,6 +110,15 @@ void* abTree_search(abTree_t const * tree, int32_t key);
 ----------------------------------------------------------------*/
 void abTree_insert(abTree_t* tree, int32_t key, void const * data);
 
+/* Remove a key from the tree
+ * 
+ * @param abTree_t* tree : [in] The tree to remove from
+ * @param int32_t key    : [in] Key to be removed
+ * 
+ * @return void* : Data associated with the key (or null if not found)
+----------------------------------------------------------------*/
+void* abTree_remove(abTree_t* tree, int32_t key);
+
 /* Print the whole tree
  * 
  * @param abTree_t* tree : [in] The tree to print
@@ -127,9 +130,6 @@ void abTree_print(abTree_t const * tree);
  * @param abTree_t* tree : [in] The tree to de-allocate
 ----------------------------------------------------------------*/
 void abTree_destroy(abTree_t* tree);
-
-
-void* abTree_remove(abTree_t* tree, int32_t key);
 
 
 #ifdef __cplusplus

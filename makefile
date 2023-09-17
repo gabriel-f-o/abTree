@@ -49,13 +49,13 @@ INC_DIR += ./utest/cpputest/include/CppUTest
 INC_DIR += ./utest/cpputest/include/CppUTestExt
 
 #GCC Compiler flags 
-CFLAGS := --coverage -std=c99 -Wall -pedantic -g3
+CFLAGS := --coverage -std=c99 -Wall -Wextra -pedantic -g3
 CFLAGS += -include ./utest/cpputest/include/CppUTest/MemoryLeakDetectorNewMacros.h
 CFLAGS += -include ./utest/cpputest/include/CppUTest/MemoryLeakDetectorMallocMacros.h
 CFLAGS += -include ./utest/Tests/tests_mocks.h
 
 #G++ Compiler flags 
-CXXFLAGS := -Wall -pedantic -std=c++17 -g3
+CXXFLAGS := -Wall -Wextra -pedantic -std=c++17 -g3
 CXXFLAGS += -include ./utest/cpputest/include/CppUTest/MemoryLeakDetectorNewMacros.h
 CXXFLAGS += -include ./utest/cpputest/include/CppUTest/MemoryLeakDetectorMallocMacros.h
 
@@ -124,9 +124,9 @@ CDEP := $(COBJ:%.o=%.d)
 #Declare default targets
 .PHONY : exe clean clear
 exe: $(BUILD_DIR)/main.exe
-#chcp 65001
-#$(^)
-#python -m gcovr -r ./ --html-details $(BUILD_DIR)/cover.html
+	chcp 65001
+	$(^)
+	python -m gcovr -r ./ --html-details $(BUILD_DIR)/cover.html
 
 #Declare the first target. Syntax is 
 #target: dependency1 dependency2... dependencyN
